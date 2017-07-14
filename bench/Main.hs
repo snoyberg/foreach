@@ -51,6 +51,20 @@ main = defaultMain $ reverse
       (\count -> VU.length $ VU.take count $ VU.replicate (count * 2) ())
       count'
     ]
+  , bgroup "enum+length"
+    [ bench "foreach" $ whnf
+      (\high -> runIdentity $ FE.length $ FE.enumFromTo 1 high)
+      high'
+    , bench "list" $ whnf
+      (\high -> length $ [1..high])
+      high'
+    , bench "boxed vector" $ whnf
+      (\high -> VB.length $ VB.enumFromTo 1 high)
+      high'
+    , bench "unboxed vector" $ whnf
+      (\high -> VU.length $ VU.enumFromTo 1 high)
+      high'
+    ]
   ]
   where
     high' :: Int

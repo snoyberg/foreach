@@ -27,7 +27,7 @@ sum
   :: (Num a, Monad m)
   => Stream m a
   -> m a
-sum stream = forEach 0 stream $ \total x c ->
+sum = forEach 0 $ \total x c ->
   continue_ c $! total + x
 {-# INLINE sum #-}
 
@@ -54,7 +54,7 @@ length
   :: Monad m
   => Stream m a
   -> m Int
-length stream = forEach 0 stream $ \total _ c -> continue_ c (total + 1)
+length = forEach 0 $ \total _ c -> continue_ c (total + 1)
 {-# INLINE length #-}
 
 take

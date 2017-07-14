@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 import ForEach.Prelude
 import qualified ForEach as FE
 import Criterion.Main
@@ -11,6 +12,9 @@ main = defaultMain
   [ bgroup "enum+filter+map+sum"
     [ bench "foreach" $ whnf
        (\high -> runIdentity $ FE.sum $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
+       high'
+    , bench "foreach overloaded lists" $ whnf
+       (\high -> runIdentity $ FE.sum $ FE.map (* 2) $ FE.filter even [1..high])
        high'
     , bench "foreach foldl'" $ whnf
        (\high -> foldl' (+) 0 $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
@@ -35,7 +39,7 @@ main = defaultMain
       (\high -> runIdentity $ FE.sum $ FE.enumFromTo 1 high)
       high'
     , bench "list" $ whnf
-      (\high -> sum [1..high])
+      (\high -> sum ([1..high] :: [Int]))
       high'
     , bench "boxed vector" $ whnf
       (\high -> VB.sum $ VB.enumFromTo 1 high)
@@ -63,7 +67,7 @@ main = defaultMain
       (\high -> runIdentity $ FE.length $ FE.enumFromTo 1 high)
       high'
     , bench "list" $ whnf
-      (\high -> length $ [1..high])
+      (\high -> length ([1..high] :: [Int]))
       high'
     , bench "boxed vector" $ whnf
       (\high -> VB.length $ VB.enumFromTo 1 high)

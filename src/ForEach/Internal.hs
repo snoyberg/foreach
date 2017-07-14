@@ -1,12 +1,14 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 module ForEach.Internal where
 
 import Data.Functor.Identity
 import Data.Monoid
+import GHC.Exts
+import qualified Data.Foldable as F
 
 data Step s a
   = Done
@@ -50,3 +52,13 @@ instance m ~ Identity => Foldable (Stream m) where
           Skip s' -> loop s' accum
           Yield s' a -> loop s' (accum <> f a)
   {-# INLINE foldMap #-}
+
+instance m ~ Identity => IsList (Stream m a) where
+  type Item (Stream m a) = a
+  toList = F.toList
+  {-# INLINE toList #-}
+  fromList = flip Stream $ \xs ->
+    case xs of
+      [] -> return Done
+      x:xs' -> return $ Yield xs' x
+  {-# INLINE fromList #-}

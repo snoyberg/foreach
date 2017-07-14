@@ -10,7 +10,7 @@ module ForEach
   ) where
 
 import ForEach.Prelude
-import Prelude (Num (..), Ord (..), Monad (..), ($), ($!), undefined, Bool, Int)
+import Prelude (Num (..), Ord (..), Monad (..), ($), ($!), undefined, Bool, Int, fmap)
 
 enumFromTo
   :: (Num a, Ord a, Monad m)
@@ -36,7 +36,7 @@ map
   => (a -> b)
   -> Stream m a
   -> Stream m b
-map f = forEachG () $ \() a g -> yield_ g () (f a)
+map = fmap
 {-# INLINE map #-}
 
 filter

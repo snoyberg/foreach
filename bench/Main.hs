@@ -4,12 +4,19 @@ import Criterion.Main
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
 import System.IO.Unsafe
+import Data.Foldable (foldl')
 
 main :: IO ()
-main = defaultMain $ reverse
+main = defaultMain
   [ bgroup "enum+filter+map+sum"
     [ bench "foreach" $ whnf
        (\high -> runIdentity $ FE.sum $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
+       high'
+    , bench "foreach foldl'" $ whnf
+       (\high -> foldl' (+) 0 $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
+       high'
+    , bench "foreach foldable sum" $ whnf
+       (\high -> sum $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
        high'
     , bench "foreach IO" $ whnfIO
        $ FE.sum $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high'

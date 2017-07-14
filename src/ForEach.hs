@@ -4,6 +4,9 @@ module ForEach
   , sum
   , map
   , filter
+  , length
+  , take
+  , replicate
   ) where
 
 import ForEach.Prelude
@@ -46,3 +49,33 @@ filter pred = forEachG () $ \() a g ->
     then yield_ g () a
     else skip_ g ()
 {-# INLINE filter #-}
+
+length
+  :: Monad m
+  => Stream m a
+  -> m Int
+length stream = forEach 0 stream $ \total _ c -> continue_ c (total + 1)
+{-# INLINE length #-}
+
+take
+  :: Monad m
+  => Int
+  -> Stream m a
+  -> Stream m a
+-- FIXME this forces one extra value to be pulled in
+take count0 = forEachG count0 $ \count a g ->
+  if count <= 0
+    then done_ g
+    else yield_ g (count - 1) a
+{-# INLINE take #-}
+
+replicate
+  :: Monad m
+  => Int
+  -> a
+  -> Stream m a
+replicate count0 a = generate count0 $ \count g ->
+  if count <= 0
+    then done_ g
+    else yield_ g (count - 1) a
+{-# INLINE replicate #-}

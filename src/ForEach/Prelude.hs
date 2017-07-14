@@ -64,7 +64,7 @@ forEach
   :: forall accum m final a.
      Monad m
   => accum -- ^ initial accumulator
-  -> Stream m a
+  -> Stream m a -- FIXME Swap order to put this after func
   -> (forall final. accum -> a -> Consumer accum m final -> m final)
   -> m accum
 forEach accum0 (Stream s0 next) func =

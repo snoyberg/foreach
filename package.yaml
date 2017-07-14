@@ -21,7 +21,6 @@ library:
   - ForEach
   - ForEach.Internal
   - ForEach.Prelude
-  - RawStream
   ghc-options:
   - -O2
 

@@ -3,21 +3,12 @@ import qualified ForEach as FE
 import Criterion.Main
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
-import qualified RawStream as RS
 import System.IO.Unsafe
 
 main :: IO ()
-main = defaultMain
+main = defaultMain $ reverse
   [ bgroup "enum+filter+map+sum"
-    [ bench "RawStream/foreach mix" $ whnf
-       (\high -> runIdentity $ RS.sum $ RS.map (* 2) $ RS.filter even $ FE.enumFromTo 1 high)
-       high'
-    , bench "RawStream" $ whnf
-       (\high -> runIdentity $ RS.sum $ RS.map (* 2) $ RS.filter even $ RS.enumFromTo 1 high)
-       high'
-    , bench "RawStream IO" $ whnfIO
-       $ RS.sum $ RS.map (* 2) $ RS.filter even $ RS.enumFromTo 1 high'
-    , bench "foreach" $ whnf
+    [ bench "foreach" $ whnf
        (\high -> runIdentity $ FE.sum $ FE.map (* 2) $ FE.filter even $ FE.enumFromTo 1 high)
        high'
     , bench "foreach IO" $ whnfIO
@@ -32,7 +23,38 @@ main = defaultMain
        (\high -> VU.sum $ VU.map (* 2) $ VU.filter even $ VU.enumFromTo 1 high)
        high'
     ]
+  , bgroup "simple sum"
+    [ bench "foreach" $ whnf
+      (\high -> runIdentity $ FE.sum $ FE.enumFromTo 1 high)
+      high'
+    , bench "list" $ whnf
+      (\high -> sum [1..high])
+      high'
+    , bench "boxed vector" $ whnf
+      (\high -> VB.sum $ VB.enumFromTo 1 high)
+      high'
+    , bench "unboxed vector" $ whnf
+      (\high -> VU.sum $ VU.enumFromTo 1 high)
+      high'
+    ]
+  , bgroup "replicate+take+length"
+    [ bench "foreach" $ whnf
+      (\count -> runIdentity $ FE.length $ FE.take count $ FE.replicate (count * 2) ())
+      count'
+    , bench "list" $ whnf
+      (\count -> length $ take count $ replicate (count * 2) ())
+      count'
+    , bench "boxed vector" $ whnf
+      (\count -> VB.length $ VB.take count $ VB.replicate (count * 2) ())
+      count'
+    , bench "unboxed vector" $ whnf
+      (\count -> VU.length $ VU.take count $ VU.replicate (count * 2) ())
+      count'
+    ]
   ]
   where
     high' :: Int
     high' = 1000000
+
+    count' :: Int
+    count' = 1000000

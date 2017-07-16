@@ -10,7 +10,7 @@ module ForEach
   ) where
 
 import ForEach.Prelude
-import Prelude (Num (..), Ord (..), Monad (..), ($), ($!), undefined, Bool, Int, fmap)
+import Prelude (Num (..), Ord (..), Monad (..), ($), ($!), undefined, Bool, Int, fmap, otherwise)
 
 enumFromTo
   :: (Num a, Ord a, Monad m)
@@ -44,10 +44,14 @@ filter
   => (a -> Bool)
   -> Stream m a
   -> Stream m a
-filter pred = forEachG () $ \() a g ->
-  if pred a
-    then yield_ g () a
-    else skip_ g ()
+filter pred = transform () $ \next s () g -> do
+  step <- next s
+  case step of
+    Done -> done_ g
+    Skip s' -> skip_ g (s', ())
+    Yield s' a
+      | pred a -> yield_ g (s', ()) a
+      | otherwise -> skip_ g (s', ())
 {-# INLINE filter #-}
 
 length
@@ -62,11 +66,15 @@ take
   => Int
   -> Stream m a
   -> Stream m a
--- FIXME this forces one extra value to be pulled in
-take count0 = forEachG count0 $ \count a g ->
+take count0 = transform count0 $ \next s count g ->
   if count <= 0
     then done_ g
-    else yield_ g (count - 1) a
+    else do
+      step <- next s
+      case step of
+        Done -> done_ g
+        Skip s' -> skip_ g (s', count)
+        Yield s' a -> yield_ g (s', count - 1) a
 {-# INLINE take #-}
 
 replicate

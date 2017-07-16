@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module ForEach.Prelude
   ( Stream
+  , Step (..)
   , Generator
   , Identity (..)
   , done_
@@ -12,7 +13,7 @@ module ForEach.Prelude
   , continue_
   , break_
   , forEach
-  , forEachG
+  , transform
   ) where
 
 import ForEach.Internal
@@ -88,25 +89,20 @@ consumer = Consumer
   , break' = return . Left
   }
 
-forEachG
-  :: forall state m final a b.
+transform
+  :: forall bstate m final a b.
      Monad m
-  => state -- ^ initial state
-  -> (forall final. state -> a -> Generator state b m final -> m final)
+  => bstate -- ^ initial state
+  -> (forall astate final.
+      (astate -> m (Step astate a)) ->
+      astate ->
+      bstate ->
+      Generator (astate, bstate) b m final ->
+      m final)
   -> Stream m a
   -> Stream m b
-forEachG bstate0 func (Stream astate0 next) =
-  Stream (astate0, bstate0) $ \(astate, bstate) -> do
-    astep <- next astate
-    case astep of
-      -- FIXME allow variant that lets us keep yielding bs if desired
-      Done -> return Done
-      Skip astate' -> return $ Skip (astate', bstate)
-      Yield astate' a -> do
-        bstep <- func bstate a generator
-        return $
-          case bstep :: Step state b of
-            Done -> Done
-            Skip bstate' -> Skip (astate', bstate')
-            Yield bstate' b -> Yield (astate', bstate') b
-{-# INLINE forEachG #-}
+transform bstate0 func (Stream astate0 next) =
+  let func' = func next
+   in Stream (astate0, bstate0) $ \(astate, bstate) ->
+        func' astate bstate generator
+{-# INLINE transform #-}

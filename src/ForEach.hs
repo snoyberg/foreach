@@ -17,18 +17,18 @@ enumFromTo
   => a
   -> a
   -> Stream m a
-enumFromTo low high = generate low $ \curr g ->
+enumFromTo low high = generate low $ \curr ->
+  return $
   if curr >= high
-    then done_ g
-    else yield_ g (curr + 1) curr
+    then Done
+    else Yield (curr + 1) curr
 {-# INLINE enumFromTo #-}
 
 sum
   :: (Num a, Monad m)
   => Stream m a
   -> m a
-sum = forEach 0 $ \total x c ->
-  continue_ c $! total + x
+sum = forEach 0 $ \total x -> return $ Continue $! total + x
 {-# INLINE sum #-}
 
 map
@@ -44,21 +44,21 @@ filter
   => (a -> Bool)
   -> Stream m a
   -> Stream m a
-filter pred = transform () $ \next s () g -> do
+filter pred = transform () $ \next s () -> do
   step <- next s
-  case step of
-    Done -> done_ g
-    Skip s' -> skip_ g (s', ())
+  return $ case step of
+    Done -> Done
+    Skip s' -> Skip (s', ())
     Yield s' a
-      | pred a -> yield_ g (s', ()) a
-      | otherwise -> skip_ g (s', ())
+      | pred a -> Yield (s', ()) a
+      | otherwise -> Skip (s', ())
 {-# INLINE filter #-}
 
 length
   :: Monad m
   => Stream m a
   -> m Int
-length = forEach 0 $ \total _ c -> continue_ c (total + 1)
+length = forEach 0 $ \total _ -> return $ Continue $! total + 1
 {-# INLINE length #-}
 
 take
@@ -66,15 +66,15 @@ take
   => Int
   -> Stream m a
   -> Stream m a
-take count0 = transform count0 $ \next s count g ->
+take count0 = transform count0 $ \next s count ->
   if count <= 0
-    then done_ g
+    then return Done
     else do
       step <- next s
-      case step of
-        Done -> done_ g
-        Skip s' -> skip_ g (s', count)
-        Yield s' a -> yield_ g (s', count - 1) a
+      return $ case step of
+        Done -> Done
+        Skip s' -> Skip (s', count)
+        Yield s' a -> Yield (s', count - 1) a
 {-# INLINE take #-}
 
 replicate
@@ -82,8 +82,9 @@ replicate
   => Int
   -> a
   -> Stream m a
-replicate count0 a = generate count0 $ \count g ->
+replicate count0 a = generate count0 $ \count ->
+  return $
   if count <= 0
-    then done_ g
-    else yield_ g (count - 1) a
+    then Done
+    else Yield (count - 1) a
 {-# INLINE replicate #-}
